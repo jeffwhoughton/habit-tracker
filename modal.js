@@ -13,7 +13,7 @@ const categoryEmojisMap = {
 	"Weight / BMI": [],
 	"Spending": [],
 	"Cals / Protein": [],
-	"TODOs": ["☐","☑"],
+	"TODOs": ["☐ ","☑ "],
 	"Mood": ["😀", "🙂", "😑", "😞", "😢"],
 	"Alcohol": ["🍺","—"]
 };
