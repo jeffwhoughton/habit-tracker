@@ -13,8 +13,9 @@ const categoryEmojisMap = {
 	"Weight / BMI": [],
 	"Spending": [],
 	"Cals / Protein": [],
+	"TODOs": ["☐","☑"],
 	"Mood": ["😀", "🙂", "😑", "😞", "😢"],
-	"Alcohol": ["🍺"]
+	"Alcohol": ["🍺","—"]
 };
 
 // Fallback if the category doesn't appear in the map
@@ -32,7 +33,6 @@ function tintEmoji(emoji, div) {
  ********************************************************************/
 let currentEditDateKey = null;
 let currentEditCategory = null;
-const quickEmojis = ["✅", "❌", "🟡"];
 
 function openModal(dateKey, category) {
 	currentEditDateKey = dateKey;
