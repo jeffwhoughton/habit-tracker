@@ -24,8 +24,10 @@ exportDataBtn.addEventListener("click", () => {
     document.body.removeChild(a);
 });
 
-// Detect long press to trigger file import
-exportDataBtn.addEventListener("mousedown", () => {
+// Handle long press for mobile and desktop
+const startPressTimer = (event) => {
+    event.preventDefault(); // Prevent default actions (e.g., context menu on desktop)
+
     pressTimer = setTimeout(() => {
         pressTimer = null; // Clear the timer to distinguish from a short press
 
@@ -54,7 +56,15 @@ exportDataBtn.addEventListener("mousedown", () => {
 
         fileInput.click();
     }, 800); // Long press threshold (800ms)
-});
+};
 
-exportDataBtn.addEventListener("mouseup", () => clearTimeout(pressTimer));
-exportDataBtn.addEventListener("mouseleave", () => clearTimeout(pressTimer));
+const clearPressTimer = () => clearTimeout(pressTimer);
+
+// Add event listeners for both desktop and mobile
+exportDataBtn.addEventListener("mousedown", startPressTimer);
+exportDataBtn.addEventListener("mouseup", clearPressTimer);
+exportDataBtn.addEventListener("mouseleave", clearPressTimer);
+
+exportDataBtn.addEventListener("touchstart", startPressTimer); // Mobile support
+exportDataBtn.addEventListener("touchend", clearPressTimer);   // Mobile support
+exportDataBtn.addEventListener("touchcancel", clearPressTimer); // Mobile support
