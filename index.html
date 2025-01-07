@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<title>Tracker</title>
+	<link rel="icon" type="image/x-icon" href="calicon.png">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+	<header>
+		<button id="prevWeekBtn">&#9664;</button>
+		<h1 id="weekDisplay">January 2025, W1</h1>
+		<button id="nextWeekBtn">&#9654;</button>
+	</header>
+
+	<div class="tabs">
+		<button id="tasksTabBtn" class="active">Tasks</button>
+		<button id="healthTabBtn">Health</button>
+	</div>
+
+	<table id="calendarTable">
+		<thead>
+			<tr>
+				<th></th>
+				<!-- Dates will be dynamically inserted here (Sun 29, Mon 30, etc.) -->
+			</tr>
+		</thead>
+		<tbody>
+			<!-- Category rows & data cells will be dynamically inserted here -->
+		</tbody>
+	</table>
+
+	<button id="exportDataBtn">Export Data</button>
+
+
+	<!-- ===== Modal for editing/adding entries ===== -->
+	<div class="modal-backdrop" id="modalBackdrop">
+		<div class="modal" id="entryModal">
+			<button id="cancelBtn">✖</button>
+			<h2 id="modalTitle">Edit Entries</h2>
+
+			<!-- Container for previous entries -->
+			<div id="previousEntries"></div>
+			<br>
+			<!-- New entry field(s) goes here -->
+			<div id="newEntryWrap"></div>
+			<textarea id="newEntryTitle" rows="2"></textarea>
+
+			<button id="saveEntryBtn">Submit Text Entry</button><br><br>
+		</div>
+	</div>
+
+	<script src="dateutils.js"></script>
+	<script src="modal.js"></script> 
+	<script src="export.js"></script> 
+	<script>
+
+	// Organize categories by tab:
+	const categoriesByTab = {
+		tasks: [
+			"Weekly Goal",
+			"Work",
+			"Workout",
+			"Reading",
+			"Writing",
+			"Coding",
+			"Plans",
+			"TODOs"
+		],
+		health: [
+			"Weight / BMI",
+			"Spending",
+			"Early Rise",
+			"Screen Time",
+			"Cals / Protein",
+			"Alcohol",
+			"Journal",
+			"Mood"
+		]
+	};
+
+	// Which tab is currently selected?
+	let selectedTab = "tasks"; // default to Health
+
+	// Data structure: For each dateKey -> category -> array of objects
+	// e.g. calendarData["2025-01-01"]["Workout"] = [
+	//   { title: "Shoulders day", description: "Focused on overhead press" },
+	//   { title: "Extra cardio",  description: "" }
+	// ]
+	let calendarData = {};
+
+	// We'll use today's date as a starting point for demonstration
+	let currentDate = new Date();
+
+	// Attempt to load existing data from localStorage
+	const savedData = localStorage.getItem("calendarData");
+	if (savedData) {
+		calendarData = JSON.parse(savedData);
+	}
+
+	// Some references to DOM elements
+	const weekDisplay = document.getElementById("weekDisplay");
+	const prevWeekBtn = document.getElementById("prevWeekBtn");
+	const nextWeekBtn = document.getElementById("nextWeekBtn");
+	const calendarTable = document.getElementById("calendarTable");
+	const tbody = calendarTable.querySelector("tbody");
+
+	// Tab buttons
+	const healthTabBtn = document.getElementById("healthTabBtn");
+	const tasksTabBtn = document.getElementById("tasksTabBtn");
+
+	function isWideCell(cat){
+		// Return true if category cell should span all columns
+		// Adjust as needed for new categories
+		return (
+			cat === "Weight / BMI" ||
+			cat === "Spending" ||
+			cat === "Weekly Goal"
+		);
+	}
+
+	function isTallCell(cat){
+		// Return true if category cell should span all columns
+		// Adjust as needed for new categories
+		return (
+			cat === "TODOs" ||
+			cat === "Mood" ||
+			cat === "Plans" ||
+			cat === "Journal"
+		);
+	}
+
+	function shouldDisplayDescription(cat){
+		return cat == "TODOs" || cat == "Plans";
+	}
+
+	// For tasks like "TODOs", we might add extra blank lines on certain days
+	function howManyNewLinesToAdd(startOfWeek, cat, x){
+		
+		if (x == 0) return 0;
+
+		if (x <= 6 && howManyNewLinesToAdd(startOfWeek,cat,x-1) != 0) return 0;
+
+		const previousDateKey = formatDateKey(shiftDate(startOfWeek, x-1));
+		const previousEntries = calendarData[previousDateKey]?.[cat] || [];
+
+		const currentDateKey = formatDateKey(shiftDate(startOfWeek, x));
+		const currentEntries = calendarData[currentDateKey]?.[cat] || [];
+
+		if (previousEntries.length + currentEntries.length > 6) return 0;
+
+		return previousEntries.length;
+	}
+
+	/********************************************************************
+	 *  Core function to render the calendar
+	 ********************************************************************/
+	function renderCalendar(selectedDate) {
+		const categories = categoriesByTab[selectedTab];
+		const startOfWeek = getStartOfWeek(selectedDate);
+
+		const monthName = getMonthName(startOfWeek);
+		const year = startOfWeek.getFullYear();
+		const weekNum = getWeekOfMonth(startOfWeek);
+
+		weekDisplay.textContent = `${monthName} ${year}, W${weekNum}`;
+
+		// Build date headers
+		const theadRow = calendarTable.querySelector("thead tr");
+		while (theadRow.children.length > 1) {
+			theadRow.removeChild(theadRow.lastChild);
+		}
+		for (let i = 0; i < 7; i++) {
+			const d = shiftDate(startOfWeek, i);
+			const dayName = d.toLocaleString("default", { weekday: "short" });
+			const dateNum = d.getDate();
+
+			const th = document.createElement("th");
+			// Highlight today's cell in header
+			if (d.toDateString() === new Date().toDateString()) {
+				th.style.outline = "1px solid black";
+			}
+			th.innerHTML = `${dayName}<br>${dateNum}`;
+			theadRow.appendChild(th);
+		}
+
+		// Build category rows
+		tbody.innerHTML = "";
+		categories.forEach((cat) => {
+			const row = document.createElement("tr");
+
+			// Category cell
+			const categoryFirstColumnCell = document.createElement("td");
+			categoryFirstColumnCell.textContent = cat;
+			row.appendChild(categoryFirstColumnCell);
+
+			// 7 day cells
+			for (let i = 0; i < 7; i++) {
+				const d = shiftDate(startOfWeek, i);
+				const dateKey = formatDateKey(d);
+
+				const tdTableCell = document.createElement("td");
+				if (isWideCell(cat) && i === 0) {
+					tdTableCell.colSpan = 7;
+				}
+				tdTableCell.dataset.dateKey = dateKey;
+				tdTableCell.dataset.category = cat;
+
+				const catEntries = calendarData[dateKey]?.[cat] || [];
+
+				const cellWrapper = document.createElement("div");
+				if (isTallCell(cat)) {
+					cellWrapper.classList.add("cell-wrapper-tall");
+				} else {
+					cellWrapper.classList.add("cell-wrapper-short");
+					if (catEntries.length == 1){
+						cellWrapper.style.display = "flex";
+					}
+				}
+
+				// Possibly add new lines for "TODOs"
+				if (isTallCell(cat) && shouldDisplayDescription(cat)) {
+					for (let j = 0; j < howManyNewLinesToAdd(startOfWeek, cat, i); j++) {
+						cellWrapper.appendChild(document.createElement("br"));
+					}
+				}
+
+				catEntries.forEach((entry, index) => {
+					const cellContentEntry = document.createElement("div");
+					if (shouldDisplayDescription(cat)) {
+						cellContentEntry.classList.add("cell-content-overflow");
+					} else {
+						cellContentEntry.classList.add("cell-content-wrapped");
+					}
+
+					// Add newlines based on the current iteration index
+					let displayText = "";
+
+					if (isTallCell(cat) && shouldDisplayDescription(cat) && entry.description) {
+						displayText = "<br>".repeat(index) + entry.title + entry.description;
+					} else {
+						displayText = entry.title;						
+					}
+					tintEmoji(entry.title, cellContentEntry);
+
+					cellContentEntry.innerHTML = displayText;
+					cellWrapper.appendChild(cellContentEntry);
+				});
+
+				// Open modal on cell click
+				tdTableCell.addEventListener("click", () => openModal(dateKey, cat));
+
+				if (!isWideCell(cat) || i === 0) {
+					tdTableCell.appendChild(cellWrapper);
+					row.appendChild(tdTableCell);
+				}
+			}
+
+			tbody.appendChild(row);
+		});
+	}
+
+	/********************************************************************
+	 *  Tab switching
+	 ********************************************************************/
+	function activateTab(tabName) {
+		selectedTab = tabName;
+		// Update tab button styling (bold for the active one)
+		healthTabBtn.classList.remove("active");
+		tasksTabBtn.classList.remove("active");
+		if (tabName === "health") {
+			healthTabBtn.classList.add("active");
+		} else {
+			tasksTabBtn.classList.add("active");
+		}
+		// Re-render calendar
+		renderCalendar(currentDate);
+	}
+
+	healthTabBtn.addEventListener("click", () => {
+		activateTab("health");
+	});
+	tasksTabBtn.addEventListener("click", () => {
+		activateTab("tasks");
+	});
+
+	/********************************************************************
+	 *  Prev/Next week buttons
+	 ********************************************************************/
+	prevWeekBtn.addEventListener("click", () => {
+		currentDate = shiftDate(currentDate, -7);
+		renderCalendar(currentDate);
+	});
+
+	nextWeekBtn.addEventListener("click", () => {
+		currentDate = shiftDate(currentDate, 7);
+		renderCalendar(currentDate);
+	});
+
+	/********************************************************************
+	 *  Initial render (Health tab by default)
+	 ********************************************************************/
+	renderCalendar(currentDate);
+
+	</script>
+</body>
+</html>
