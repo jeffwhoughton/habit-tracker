@@ -162,6 +162,8 @@ function openModal(dateKey, category) {
 
 	// Show the modal
 	modalBackdrop.style.display = "flex";
+
+	history.pushState({ modalOpen: true }, "Modal Open");
 }
 
 function closeModal() {
@@ -169,12 +171,25 @@ function closeModal() {
 	currentEditDateKey = null;
 	currentEditCategory = null;
 	newEntryTitleField.value = "";
+
+	// Go back in the history stack if modal was opened
+    if (history.state?.modalOpen) {
+        history.back();
+    }
 }
 
 function quickEntry(emoji) {
 	document.getElementById("newEntryTitle").value = emoji;
 	saveEntryBtn.click();
 }
+
+// Listen for the popstate event to handle back button
+window.addEventListener("popstate", (event) => {
+    if (event.state?.modalOpen) {
+    	
+        closeModal();
+    }
+});
 
 // -------------------------------------------------------
 //   MODIFICATION #1: Filter out empty entries on save

@@ -3,7 +3,7 @@ html, body {
 	margin: 0;
 	padding: 0;
 	font-family: sans-serif;
-	overflow-x: hidden;
+	overflow: hidden;
 }
 
 /* ===== Tabs bar styling ===== */
@@ -81,12 +81,13 @@ th, td {
 }
 .cell-content-overflow{
 	font-size: 0.65rem;
-	line-height: 0.9rem;
+	line-height: 11px;
 	text-align: left;
 	white-space: nowrap;
 	position:absolute;
 	max-height: 93px;
 	overflow:hidden;
+	background-color: white;
 }
 
 /* ===== Modal styling ===== */

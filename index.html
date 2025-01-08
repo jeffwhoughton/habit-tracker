@@ -4,7 +4,7 @@
 	<meta charset="UTF-8" />
 	<title>Tracker</title>
 	<link rel="icon" type="image/x-icon" href="calicon.png">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<meta name="viewport" content="width=device-width, user-scalable=0" />
 	<link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -141,17 +141,16 @@
 		
 		if (x == 0) return 0;
 
-		if (x <= 6 && howManyNewLinesToAdd(startOfWeek,cat,x-1) != 0) return 0;
-
 		const previousDateKey = formatDateKey(shiftDate(startOfWeek, x-1));
 		const previousEntries = calendarData[previousDateKey]?.[cat] || [];
 
 		const currentDateKey = formatDateKey(shiftDate(startOfWeek, x));
 		const currentEntries = calendarData[currentDateKey]?.[cat] || [];
 
-		if (previousEntries.length + currentEntries.length > 6) return 0;
-
-		return previousEntries.length;
+		const totalLines = previousEntries.length + howManyNewLinesToAdd(startOfWeek, cat, x-1);
+		if (totalLines + currentEntries.length > 8) return 0;
+		else return totalLines;
+		
 	}
 
 	/********************************************************************
@@ -222,8 +221,11 @@
 
 				// Possibly add new lines for "TODOs"
 				if (isTallCell(cat) && shouldDisplayDescription(cat)) {
-					for (let j = 0; j < howManyNewLinesToAdd(startOfWeek, cat, i); j++) {
-						cellWrapper.appendChild(document.createElement("br"));
+					let newLineCount = howManyNewLinesToAdd(startOfWeek, cat, i);
+					for (let j = 0; j < newLineCount; j++) {
+						const myBr = document.createElement("div");
+						myBr.style.height = "11px";
+						cellWrapper.appendChild(myBr);
 					}
 				}
 
@@ -234,12 +236,15 @@
 					} else {
 						cellContentEntry.classList.add("cell-content-wrapped");
 					}
+					cellContentEntry.style.zIndex = 100-index;
 
 					// Add newlines based on the current iteration index
 					let displayText = "";
 
 					if (isTallCell(cat) && shouldDisplayDescription(cat) && entry.description) {
-						displayText = "<br>".repeat(index) + entry.title + " " + entry.description;
+						displayText = "<br>".repeat(index) +
+							entry.title + " " +
+							entry.description;
 					} else {
 						displayText = entry.title;						
 					}
