@@ -202,7 +202,7 @@ function createEntryRow(entry, idx, entries, isBlankRow = false) {
 		// Place the existing title into the desc field (or just use what's there)
 		// Because we are now treating the desc field as the "title"
 		descArea.value = entry.title || entry.description || "";
-		descArea.placeholder = "Enter text here (will be saved as 'title')";
+		descArea.placeholder = "Enter text here.";
 
 		// Make it wider:
 		descArea.style.width = "80%";
