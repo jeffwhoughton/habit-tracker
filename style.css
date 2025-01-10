@@ -25,6 +25,13 @@ html, body {
 	background-color: #fff;
 }
 
+/* ===== TODAY TAB ===== */
+ul {
+  list-style: none;
+  line-height: 30px;
+  margin-left: -15px;
+}
+
 /* ===== Header styling ===== */
 header {
 	display: flex;

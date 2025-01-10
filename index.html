@@ -24,7 +24,7 @@
 
 	<!-- === "Today" tab content (hidden by default) === -->
 	<div id="todayTabContent" style="display: none; padding: 10px;">
-		<h2>Today’s Entries:</h2>
+		<h2>Things to do today:</h2>
 		<ul id="todayEntriesList"></ul>
 	</div>
 
@@ -293,8 +293,10 @@
 		// Show/hide the appropriate content
 		if (selectedTab === "today") {
 			todayTabContent.style.display = "block";
+			document.getElementById("exportDataBtn").style.display = "none";
 		} else {
 			todayTabContent.style.display = "none";
+			document.getElementById("exportDataBtn").style.display = "block";
 			return; 
 		}
 
@@ -304,9 +306,16 @@
 		const todayKey = formatDateKey(new Date());
 		const relevantTitles = ["⬜", "✅", "❌"];
 
+		// Shift TODOs to the end:
+	    const categoriesForToday = calendarData[todayKey] || {};
+	    let categoryNames = Object.keys(categoriesForToday);
+	    categoryNames = categoryNames.filter(name => name !== "TODOs");
+	    if (categoriesForToday["TODOs"]) {
+	        categoryNames.push("TODOs");
+	    }
+
 		// Loop through all categories in your calendarData[todayKey]
-		const categoriesForToday = calendarData[todayKey] || {};
-		for (let categoryName in categoriesForToday) {
+		for (let categoryName of categoryNames) {
 			const entries = categoriesForToday[categoryName];
 
 			// We'll keep track of the index so we can update the entry in the data array
@@ -318,14 +327,14 @@
 					// else show "⬜ - Category"
 					let displayText = "";
 					if (categoryName === "TODOs") {
-						displayText = `${entry.title} - ${entry.description || "(no description)"}`;
+						displayText = `${entry.title} &nbsp;${entry.description || "(no description)"}`;
 					} else {
-						displayText = `${entry.title} - ${categoryName}`;
+						displayText = `${entry.title} &nbsp;${categoryName}`;
 					}
 
 					// Create an <li> for the "todayEntriesList"
 					const li = document.createElement("li");
-					li.textContent = displayText;
+					li.innerHTML = displayText;
 
 					/** 
 					 * ===============================
