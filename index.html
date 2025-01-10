@@ -43,7 +43,7 @@
 	</table>
 
 	<button id="exportDataBtn">Export Data</button>
-	<button id="prepopulateBtn">Prepopulate Week</button>
+	<button id="prepopulateBtn">Set Default</button>
 
 
 	<!-- ===== Modal for editing/adding entries ===== -->
@@ -297,7 +297,6 @@
 		// Show/hide the appropriate content
 		if (selectedTab === "today") {
 			todayTabContent.style.display = "block";
-			document.getElementById("exportDataBtn").style.display = "none";
 			
 			// -----------------------------
 			//  Show the date in weekDisplay
@@ -316,7 +315,6 @@
 
 		} else {
 			todayTabContent.style.display = "none";
-			document.getElementById("exportDataBtn").style.display = "block";
 			return; 
 		}
 
@@ -408,6 +406,22 @@
 		} else {
 			weekTabBtn.classList.add("active");
 		}
+
+		// --- Show/hide buttons depending on tab ---
+	    const exportDataBtn = document.getElementById("exportDataBtn");
+	    const prepopulateBtn = document.getElementById("prepopulateBtn");
+
+	    if (tabName === "today") {
+	        exportDataBtn.style.display = "inline-block"; // Only on "today"
+	        prepopulateBtn.style.display = "none";
+	    } else if (tabName === "week") {
+	        exportDataBtn.style.display = "none";
+	        prepopulateBtn.style.display = "inline-block"; // Only on "week"
+	    } else {
+	        // tabName === "health"
+	        exportDataBtn.style.display = "none";
+	        prepopulateBtn.style.display = "none";
+	    }
 
 		renderCalendar(currentDate);   // Re-render table if needed
 		renderTodayTab();             // Also render today's list
