@@ -7,6 +7,10 @@ if (savedData) {
 	calendarData = JSON.parse(savedData);
 }
 
+// *** Variables for copy/paste logic
+let copiedData = null;
+let copiedDataOldDate = null;
+
 // Some references to DOM elements
 const weekDisplay = document.getElementById("weekDisplay");
 const calendarTable = document.getElementById("calendarTable");
@@ -152,9 +156,7 @@ function renderCalendar(selectedDate) {
 					cellContentEntry.style.marginLeft = "-20px";
 				}
 
-				// Add newlines based on the current iteration index
 				let displayText = "";
-
 				if (isTallCell(cat) && shouldDisplayDescription(cat) && entry.description) {
 					displayText = "<br>".repeat(index) +
 						entry.title + " " +
@@ -170,8 +172,14 @@ function renderCalendar(selectedDate) {
 				cellWrapper.appendChild(cellContentEntry);
 			});
 
-			// Open modal on cell click
-			tdTableCell.addEventListener("click", () => openModal(dateKey, cat));
+			// *** We'll attach a combined short-press / long-press logic
+			if (cat === "TODOs") {
+				// For "TODOs", we want short press = open modal, long press = copy/move
+				addPressListenersForTODOs(tdTableCell, dateKey, cat);
+			} else {
+				// For non-TODOs categories, just open the modal on click
+				tdTableCell.addEventListener("click", () => openModal(dateKey, cat));
+			}
 
 			if (!isWideCell(cat) || i === 0) {
 				tdTableCell.appendChild(cellWrapper);
@@ -181,4 +189,126 @@ function renderCalendar(selectedDate) {
 
 		tbody.appendChild(row);
 	});
+}
+
+/********************************************************************
+ *  Combined short press & long press logic for TODOs
+ ********************************************************************/
+const LONG_PRESS_TIME = 600; // in ms
+
+function addPressListenersForTODOs(cellElement, dateKey, category) {
+  let pressTimer = null;
+  let isLongPress = false;
+
+  // Helper: Start the press timer
+  const startPress = (callback) => {
+    isLongPress = false;
+    pressTimer = setTimeout(() => {
+      isLongPress = true;
+      callback(); // Call the long-press action
+    }, LONG_PRESS_TIME);
+  };
+
+  // Helper: Clear the press timer
+  const clearPress = () => {
+    if (pressTimer) {
+      clearTimeout(pressTimer);
+      pressTimer = null;
+    }
+  };
+
+  // MOUSE events (desktop)
+  cellElement.addEventListener("mousedown", (e) => {
+    if (e.button !== 0) return; // Only respond to left mouse button
+    e.preventDefault(); // Avoid text selection or drag
+    startPress(() => handleCellLongPress(dateKey));
+  });
+
+  cellElement.addEventListener("mouseup", (e) => {
+    clearPress();
+    if (!isLongPress) {
+      openModal(dateKey, category); // Short press action
+    }
+  });
+
+  cellElement.addEventListener("mouseleave", clearPress);
+
+  // TOUCH events (mobile)
+  cellElement.addEventListener("touchstart", (e) => {
+    e.preventDefault(); // Prevent context menu on long press
+    startPress(() => handleCellLongPress(dateKey));
+  });
+
+  cellElement.addEventListener("touchend", () => {
+    clearPress();
+    if (!isLongPress) {
+      openModal(dateKey, category); // Short press action
+    }
+  });
+
+  cellElement.addEventListener("touchcancel", clearPress);
+}
+
+/********************************************************************
+ *  Handle the long-press action on a TODO cell
+ *  (copy/paste logic or any long-press functionality)
+ ********************************************************************/
+function handleCellLongPress(dateKey) {
+  if (!copiedData) {
+    // Copy logic
+    const entries = calendarData[dateKey]?.["TODOs"] || [];
+    if (entries.length === 0) return; // Nothing to copy
+
+    copiedData = JSON.parse(JSON.stringify(entries)); // Deep copy
+    copiedDataOldDate = dateKey;
+    showToast("Entries copied");
+  } else {
+    // Move logic
+    if (copiedDataOldDate === dateKey) return; // No-op for the same cell
+
+    // Clear old date's entries
+    if (calendarData[copiedDataOldDate]?.["TODOs"]) {
+      calendarData[copiedDataOldDate]["TODOs"] = [];
+    }
+
+    // Append to new date
+    if (!calendarData[dateKey]["TODOs"]) {
+      calendarData[dateKey]["TODOs"] = [];
+    }
+    calendarData[dateKey]["TODOs"] = calendarData[dateKey]["TODOs"].concat(copiedData);
+
+    // Save changes to localStorage
+    localStorage.setItem("calendarData", JSON.stringify(calendarData));
+
+    // Re-render the calendar
+    renderCalendar(currentDate);
+
+    // Clear copied data
+    copiedData = null;
+    copiedDataOldDate = null;
+
+    showToast("Entries moved");
+  }
+}
+
+/********************************************************************
+ *  A simple toast function for feedback
+ ********************************************************************/
+function showToast(message) {
+  const toast = document.createElement("div");
+  toast.textContent = message;
+  toast.style.position = "fixed";
+  toast.style.bottom = "20px";
+  toast.style.left = "50%";
+  toast.style.transform = "translateX(-50%)";
+  toast.style.background = "rgba(0,0,0,0.8)";
+  toast.style.color = "#fff";
+  toast.style.padding = "8px 12px";
+  toast.style.borderRadius = "4px";
+  toast.style.zIndex = "9999";
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    toast.remove();
+  }, 1500);
 }

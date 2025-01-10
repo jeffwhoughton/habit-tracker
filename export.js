@@ -57,6 +57,7 @@ function doImport() {
 // MOUSE events (desktop)
 // ------------------------------------
 exportDataBtn.addEventListener("mousedown", (e) => {
+	console.log("1");
   // Only care about the left mouse button
   if (e.button !== 0) return;
 
@@ -73,6 +74,7 @@ exportDataBtn.addEventListener("mousedown", (e) => {
 });
 
 exportDataBtn.addEventListener("mouseup", (e) => {
+	console.log("2");
   // If we never hit the long press timeout, it's a short press
   if (pressTimer) {
     clearTimeout(pressTimer);
@@ -85,6 +87,7 @@ exportDataBtn.addEventListener("mouseup", (e) => {
 });
 
 exportDataBtn.addEventListener("mouseleave", () => {
+	console.log("3");
   // User moved pointer off the button—cancel the press
   if (pressTimer) {
     clearTimeout(pressTimer);
@@ -96,6 +99,7 @@ exportDataBtn.addEventListener("mouseleave", () => {
 // TOUCH events (mobile)
 // ------------------------------------
 exportDataBtn.addEventListener("touchstart", (e) => {
+	console.log("4");
   e.preventDefault(); // Prevent long-press context menu on mobile
   isLongPress = false;
   pressTimer = setTimeout(() => {
@@ -105,6 +109,7 @@ exportDataBtn.addEventListener("touchstart", (e) => {
 });
 
 exportDataBtn.addEventListener("touchend", () => {
+	console.log("5");
   if (pressTimer) {
     clearTimeout(pressTimer);
     pressTimer = null;
@@ -115,6 +120,7 @@ exportDataBtn.addEventListener("touchend", () => {
 });
 
 exportDataBtn.addEventListener("touchcancel", () => {
+	console.log("6");
   if (pressTimer) {
     clearTimeout(pressTimer);
     pressTimer = null;
