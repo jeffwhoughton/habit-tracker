@@ -30,6 +30,7 @@ ul {
   list-style: none;
   line-height: 30px;
   margin-left: -15px;
+  cursor: pointer;
 }
 
 /* ===== Header styling ===== */
