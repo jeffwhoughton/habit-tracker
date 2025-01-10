@@ -180,3 +180,12 @@ th, td {
 	left: 3px;
 	cursor: pointer;
 }
+#prepopulateBtn{
+	margin-left: 50px;
+	margin-top: -25px;
+	padding: 3px;
+	font-size: 0.55rem;
+	position:absolute;
+	left: 3px;
+	cursor: pointer;
+}
