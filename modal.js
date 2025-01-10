@@ -1,16 +1,17 @@
 /**************************************************************
  * 1. References
  **************************************************************/
-const modalBackdrop = document.getElementById("modalBackdrop");
-const entryModal = document.getElementById("entryModal");
-const modalTitle = document.getElementById("modalTitle");
-const previousEntriesDiv = document.getElementById("previousEntries");
-const cancelBtn = document.getElementById("cancelBtn");
+const modalBackdrop		= document.getElementById("modalBackdrop");
+const entryModal			= document.getElementById("entryModal");
+const modalTitle			= document.getElementById("modalTitle");
+const previousEntriesDiv	= document.getElementById("previousEntries");
+const cancelBtn			= document.getElementById("cancelBtn");
 
 const categoryEmojisMap = {
 	"Weekly Goal": [],
 	"Weight / BMI": [],
 	"Spending": [],
+	"Screen Time": [],
 	"Cals / Protein": [],
 	"Mood": ["😀", "🙂", "😑", "😞", "😢"],
 	"Alcohol": ["🍺","🌿","—"]
@@ -123,69 +124,96 @@ function createEntryRow(entry, idx, entries, isBlankRow = false) {
 
 	// Decide which emojis apply to this category
 	const relevantEmojis = categoryEmojisMap[currentEditCategory] || defaultQuickEmojis;
+	const isEmojiListEmpty = !relevantEmojis || relevantEmojis.length === 0;
 
-	// Title element
 	let titleElement;
-	if (relevantEmojis.includes(entry.title)) {
-		// If the title is one of the relevant emojis, display a <select>
-		titleElement = document.createElement("select");
-		titleElement.classList.add("entry-row-drop");
+	let descArea = document.createElement("textarea");
+	descArea.classList.add("entry-row-desc");
+	descArea.rows = 2;
 
-		relevantEmojis.forEach((emoji) => {
-			const option = document.createElement("option");
-			option.value = emoji;
-			option.textContent = emoji;
-			if (emoji === entry.title) {
-				option.selected = true;
-			}
-			titleElement.appendChild(option);
-		});
+	if (!isEmojiListEmpty) {
+		// If there is at least one emoji in the list
+		if (relevantEmojis.includes(entry.title)) {
+			// If the title is one of the relevant emojis, display a <select>
+			titleElement = document.createElement("select");
+			titleElement.classList.add("entry-row-drop");
 
-		titleElement.addEventListener("change", () => {
-			entry.title = titleElement.value.trim();
-			maybeAddOrRemoveBlankRow(entry, entries, idx, isBlankRow);
-		});
+			relevantEmojis.forEach((emoji) => {
+				const option = document.createElement("option");
+				option.value = emoji;
+				option.textContent = emoji;
+				if (emoji === entry.title) {
+					option.selected = true;
+				}
+				titleElement.appendChild(option);
+			});
+
+			titleElement.addEventListener("change", () => {
+				entry.title = titleElement.value.trim();
+				maybeAddOrRemoveBlankRow(entry, entries, idx, isBlankRow);
+			});
+
+			descArea.value = entry.description || "";
+			descArea.placeholder = "Description (optional)";
+			descArea.addEventListener("change", () => {
+				entry.description = descArea.value.trim();
+				maybeAddOrRemoveBlankRow(entry, entries, idx, isBlankRow);
+			});
+		} else {
+			// Otherwise, a <select> (with blank + emojis)
+			titleElement = document.createElement("select");
+			titleElement.classList.add("entry-row-drop");
+
+			// Add an empty option
+			const emptyOption = document.createElement("option");
+			emptyOption.value = "";
+			emptyOption.textContent = "";
+			titleElement.appendChild(emptyOption);
+
+			// Insert relevant emojis as additional options
+			relevantEmojis.forEach((emoji) => {
+				const option = document.createElement("option");
+				option.value = emoji;
+				option.textContent = emoji;
+				titleElement.appendChild(option);
+			});
+
+			titleElement.value = relevantEmojis.includes(entry.title) ? entry.title : "";
+			titleElement.addEventListener("change", () => {
+				entry.title = titleElement.value.trim();
+				tintEmoji(entry.title, titleElement);
+				maybeAddOrRemoveBlankRow(entry, entries, idx, isBlankRow);
+			});
+
+			descArea.value = entry.description || "";
+			descArea.placeholder = "Description (optional)";
+			descArea.addEventListener("change", () => {
+				entry.description = descArea.value.trim();
+				maybeAddOrRemoveBlankRow(entry, entries, idx, isBlankRow);
+			});
+		}
+		tintEmoji(entry.title, titleElement);
 	} else {
-		// Otherwise, a regular textarea
-		titleElement = document.createElement("select");
-		titleElement.classList.add("entry-row-drop");
+		// If the relevant emoji list is empty, hide the dropdown
+		// and use the description field for the "title"
+		titleElement = document.createElement("span");
+		titleElement.style.display = "none"; // Hide it entirely
 
-		// Add an empty option
-		const emptyOption = document.createElement("option");
-		emptyOption.value = "";
-		emptyOption.textContent = "";
-		titleElement.appendChild(emptyOption);
+		// Place the existing title into the desc field (or just use what's there)
+		// Because we are now treating the desc field as the "title"
+		descArea.value = entry.title || entry.description || "";
+		descArea.placeholder = "Enter text here (will be saved as 'title')";
 
-		// Insert relevant emojis as additional options
-		relevantEmojis.forEach((emoji) => {
-			const option = document.createElement("option");
-			option.value = emoji;
-			option.textContent = emoji;
-			titleElement.appendChild(option);
-		});
+		// Make it wider:
+		descArea.style.width = "80%";
 
-		// If there's an existing text not in our list, we ignore it
-		// but for now let's do a best-effort (you could adapt to your needs)
-		titleElement.value = relevantEmojis.includes(entry.title) ? entry.title : "";
-
-		titleElement.addEventListener("change", () => {
-			entry.title = titleElement.value.trim();
-			tintEmoji(entry.title, titleElement);
+		// When changed, assign descArea to entry.title
+		descArea.addEventListener("change", () => {
+			entry.title = descArea.value.trim();
+			entry.description = ""; // We'll keep the 'description' field empty
 			maybeAddOrRemoveBlankRow(entry, entries, idx, isBlankRow);
 		});
 	}
-	tintEmoji(entry.title, titleElement);
-
-	// Create the description textarea
-	const descArea = document.createElement("textarea");
-	descArea.classList.add("entry-row-desc");
-	descArea.rows = 2;
-	descArea.value = entry.description || "";
-	descArea.placeholder = "Description (optional)";
-	descArea.addEventListener("change", () => {
-		entry.description = descArea.value.trim();
-		maybeAddOrRemoveBlankRow(entry, entries, idx, isBlankRow);
-	});
 
 	// Delete button
 	const deleteBtn = document.createElement("button");
