@@ -25,6 +25,14 @@ function getMonthName(date) {
 	return date.toLocaleString("default", { month: "long" });
 }
 
+function formatFriendlyDate(dateObj) {
+	const dayName = dateObj.toLocaleString("default", { weekday: "long" });
+	const monthName = dateObj.toLocaleString("default", { month: "long" });
+	const dayNum   = dateObj.getDate();
+	const year     = dateObj.getFullYear();
+	return `${dayName}, ${monthName} ${dayNum}, ${year}`;
+}
+
 function getWeekOfMonth(date) {
 	// date is the Sunday of the week
 	const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);

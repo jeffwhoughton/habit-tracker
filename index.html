@@ -15,20 +15,21 @@
 		<button id="nextWeekBtn">&#9654;</button>
 	</header>
 
-	<!-- === 3 Tabs: Today, Tasks, Health === -->
+	<!-- === 3 Tabs: Today, Week, Health === -->
 	<div class="tabs">
 		<button id="todayTabBtn">Today</button>
-		<button id="tasksTabBtn" class="active">Tasks</button>
+		<button id="weekTabBtn" class="active">Week</button>
 		<button id="healthTabBtn">Health</button>
 	</div>
 
 	<!-- === "Today" tab content (hidden by default) === -->
 	<div id="todayTabContent" style="display: none; padding: 10px;">
+		<!-- H2 will dynamically switch between "Things to do today:" and "Things to do on DATE:" -->
 		<h2>Things to do today:</h2>
 		<ul id="todayEntriesList"></ul>
 	</div>
 
-	<!-- === Table for Tasks/Health tabs === -->
+	<!-- === Table for Week/Health tabs === -->
 	<table id="calendarTable">
 		<thead>
 			<tr>
@@ -68,7 +69,7 @@
 
 	// Organize categories by tab:
 	const categoriesByTab = {
-		tasks: [
+		week: [
 			"Weekly Goal",
 			"Work",
 			"Workout",
@@ -90,12 +91,12 @@
 	};
 
 	// Which tab is currently selected?
-	let selectedTab = "tasks"; // default
+	let selectedTab = "week"; // default
 
 	// Data structure: For each dateKey -> category -> array of objects
 	let calendarData = {};
 
-	// We'll use today's date as a starting point for demonstration
+	// We'll use today's date as a starting point
 	let currentDate = new Date();
 
 	// Attempt to load existing data from localStorage
@@ -113,7 +114,7 @@
 
 	// Tab buttons
 	const todayTabBtn = document.getElementById("todayTabBtn");
-	const tasksTabBtn = document.getElementById("tasksTabBtn");
+	const weekTabBtn = document.getElementById("weekTabBtn");
 	const healthTabBtn = document.getElementById("healthTabBtn");
 
 	// "Today" tab content
@@ -143,9 +144,8 @@
 		return cat == "TODOs";
 	}
 
-	// For tasks like "TODOs", we might add extra blank lines on certain days
+	// For categories like "TODOs", we might add extra blank lines on certain days
 	function howManyNewLinesToAdd(startOfWeek, cat, x){
-		
 		if (x == 0) return 0;
 
 		const previousDateKey = formatDateKey(shiftDate(startOfWeek, x-1));
@@ -160,10 +160,10 @@
 	}
 
 	/********************************************************************
-	 *  Core function to render the calendar (for Tasks/Health)
+	 *  Core function to render the calendar (for Week/Health)
 	 ********************************************************************/
 	function renderCalendar(selectedDate) {
-		// Only show the calendar if we're on tasks/health
+		// Only show the calendar if we're on week/health
 		if (selectedTab === "today") {
 			calendarTable.style.display = "none";
 			return;
@@ -196,6 +196,11 @@
 				th.style.outline = "1px solid black";
 			}
 			th.innerHTML = `${dayName}<br>${dateNum}`;
+			th.addEventListener("click", () => {
+				// Switch app to "Today" tab, set date to 'd'
+				currentDate = d;
+				activateTab("today");
+			});
 			theadRow.appendChild(th);
 		}
 
@@ -294,6 +299,22 @@
 		if (selectedTab === "today") {
 			todayTabContent.style.display = "block";
 			document.getElementById("exportDataBtn").style.display = "none";
+			
+			// -----------------------------
+			//  Show the date in weekDisplay
+			// -----------------------------
+			weekDisplay.textContent = formatFriendlyDate(currentDate);
+
+			// -----------------------------
+			//  Update the H2 heading
+			// -----------------------------
+			const heading = todayTabContent.querySelector("h2");
+			if (currentDate.toDateString() === new Date().toDateString()) {
+				heading.textContent = "Things to do today:";
+			} else {
+				heading.textContent = "Things to do on " + formatFriendlyDate(currentDate) + ":";
+			}
+
 		} else {
 			todayTabContent.style.display = "none";
 			document.getElementById("exportDataBtn").style.display = "block";
@@ -303,7 +324,7 @@
 		// Clear out the list
 		todayEntriesList.innerHTML = "";
 
-		const todayKey = formatDateKey(new Date());
+		const todayKey = formatDateKey(currentDate);
 		const relevantTitles = ["⬜", "✅", "❌"];
 
 		// Shift TODOs to the end:
@@ -314,17 +335,14 @@
 	        categoryNames.push("TODOs");
 	    }
 
-		// Loop through all categories in your calendarData[todayKey]
+		// Loop through all categories in your calendarData[currentDateKey]
 		for (let categoryName of categoryNames) {
 			const entries = categoriesForToday[categoryName];
 
-			// We'll keep track of the index so we can update the entry in the data array
 			entries.forEach((entry, idx) => {
 				if (relevantTitles.includes(entry.title)) {
 					
-					// Decide the display text: 
-					// If category == "TODOs", show "⬜ - description"
-					// else show "⬜ - Category"
+					// Decide the display text
 					let displayText = "";
 					if (categoryName === "TODOs") {
 						displayText = `${entry.title} &nbsp;${entry.description || "(no description)"}`;
@@ -382,14 +400,14 @@
 		// Update tab button styling (bold for the active one)
 		todayTabBtn.classList.remove("active");
 		healthTabBtn.classList.remove("active");
-		tasksTabBtn.classList.remove("active");
+		weekTabBtn.classList.remove("active");
 
 		if (tabName === "today") {
 			todayTabBtn.classList.add("active");
 		} else if (tabName === "health") {
 			healthTabBtn.classList.add("active");
 		} else {
-			tasksTabBtn.classList.add("active");
+			weekTabBtn.classList.add("active");
 		}
 
 		renderCalendar(currentDate);   // Re-render table if needed
@@ -402,21 +420,37 @@
 	healthTabBtn.addEventListener("click", () => {
 		activateTab("health");
 	});
-	tasksTabBtn.addEventListener("click", () => {
-		activateTab("tasks");
+	weekTabBtn.addEventListener("click", () => {
+		activateTab("week");
 	});
 
 	/********************************************************************
-	 *  Prev/Next week buttons
+	 *  Prev/Next buttons
+	 *    - Shift by 7 days if week/health
+	 *    - Shift by 1 day if today
 	 ********************************************************************/
 	prevWeekBtn.addEventListener("click", () => {
-		currentDate = shiftDate(currentDate, -7);
-		renderCalendar(currentDate);
+		if (selectedTab === "today") {
+			// Shift by -1 day
+			currentDate = shiftDate(currentDate, -1);
+			renderTodayTab();
+		} else {
+			// Shift by -7 days
+			currentDate = shiftDate(currentDate, -7);
+			renderCalendar(currentDate);
+		}
 	});
 
 	nextWeekBtn.addEventListener("click", () => {
-		currentDate = shiftDate(currentDate, 7);
-		renderCalendar(currentDate);
+		if (selectedTab === "today") {
+			// Shift by +1 day
+			currentDate = shiftDate(currentDate, 1);
+			renderTodayTab();
+		} else {
+			// Shift by +7 days
+			currentDate = shiftDate(currentDate, 7);
+			renderCalendar(currentDate);
+		}
 	});
 
 	/********************************************************************
