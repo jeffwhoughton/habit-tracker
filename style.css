@@ -71,7 +71,7 @@ th, td {
 	align-items: center;
 }
 .cell-wrapper-tall{
-	height: 90px;
+	height: 180px;
 }
 .cell-content-wrapped{
 	font-size: 0.7rem;
@@ -80,8 +80,8 @@ th, td {
 	max-width:100%;
 }
 .cell-content-overflow{
-	font-size: 0.65rem;
-	line-height: 11px;
+	font-size: 0.7rem;
+	line-height: 13px;
 	text-align: left;
 	white-space: nowrap;
 	position:absolute;

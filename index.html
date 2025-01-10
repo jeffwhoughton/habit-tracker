@@ -76,7 +76,6 @@
 			"Screen Time",
 			"Cals / Protein",
 			"Alcohol",
-			"Journal",
 			"Mood"
 		]
 	};
@@ -127,13 +126,12 @@
 		return (
 			cat === "TODOs" ||
 			cat === "Mood" ||
-			cat === "Plans" ||
 			cat === "Journal"
 		);
 	}
 
 	function shouldDisplayDescription(cat){
-		return cat == "TODOs" || cat == "Plans";
+		return cat == "TODOs";
 	}
 
 	// For tasks like "TODOs", we might add extra blank lines on certain days
@@ -148,7 +146,7 @@
 		const currentEntries = calendarData[currentDateKey]?.[cat] || [];
 
 		const totalLines = previousEntries.length + howManyNewLinesToAdd(startOfWeek, cat, x-1);
-		if (totalLines + currentEntries.length > 8) return 0;
+		if (totalLines + currentEntries.length > 13) return 0;
 		else return totalLines;
 		
 	}
@@ -224,7 +222,7 @@
 					let newLineCount = howManyNewLinesToAdd(startOfWeek, cat, i);
 					for (let j = 0; j < newLineCount; j++) {
 						const myBr = document.createElement("div");
-						myBr.style.height = "11px";
+						myBr.style.height = "13px";
 						cellWrapper.appendChild(myBr);
 					}
 				}
@@ -307,7 +305,6 @@
 	/********************************************************************
 	 *  Initial render (Health tab by default)
 	 ********************************************************************/
-	renamePlansToTODOsOnStartup();
 	renderCalendar(currentDate);
 
 	</script>
