@@ -15,11 +15,20 @@
 		<button id="nextWeekBtn">&#9654;</button>
 	</header>
 
+	<!-- === 3 Tabs: Today, Tasks, Health === -->
 	<div class="tabs">
+		<button id="todayTabBtn">Today</button>
 		<button id="tasksTabBtn" class="active">Tasks</button>
 		<button id="healthTabBtn">Health</button>
 	</div>
 
+	<!-- === "Today" tab content (hidden by default) === -->
+	<div id="todayTabContent" style="display: none; padding: 10px;">
+		<h2>Today’s Entries:</h2>
+		<ul id="todayEntriesList"></ul>
+	</div>
+
+	<!-- === Table for Tasks/Health tabs === -->
 	<table id="calendarTable">
 		<thead>
 			<tr>
@@ -81,13 +90,9 @@
 	};
 
 	// Which tab is currently selected?
-	let selectedTab = "tasks"; // default to Health
+	let selectedTab = "tasks"; // default
 
 	// Data structure: For each dateKey -> category -> array of objects
-	// e.g. calendarData["2025-01-01"]["Workout"] = [
-	//   { title: "Shoulders day", description: "Focused on overhead press" },
-	//   { title: "Extra cardio",  description: "" }
-	// ]
 	let calendarData = {};
 
 	// We'll use today's date as a starting point for demonstration
@@ -107,12 +112,18 @@
 	const tbody = calendarTable.querySelector("tbody");
 
 	// Tab buttons
-	const healthTabBtn = document.getElementById("healthTabBtn");
+	const todayTabBtn = document.getElementById("todayTabBtn");
 	const tasksTabBtn = document.getElementById("tasksTabBtn");
+	const healthTabBtn = document.getElementById("healthTabBtn");
 
+	// "Today" tab content
+	const todayTabContent = document.getElementById("todayTabContent");
+	const todayEntriesList = document.getElementById("todayEntriesList");
+
+	/********************************************************************
+	 *  Helpers to decide row styling
+	 ********************************************************************/
 	function isWideCell(cat){
-		// Return true if category cell should span all columns
-		// Adjust as needed for new categories
 		return (
 			cat === "Weight / BMI" ||
 			cat === "Spending" ||
@@ -121,8 +132,6 @@
 	}
 
 	function isTallCell(cat){
-		// Return true if category cell should span all columns
-		// Adjust as needed for new categories
 		return (
 			cat === "TODOs" ||
 			cat === "Mood" ||
@@ -148,13 +157,20 @@
 		const totalLines = previousEntries.length + howManyNewLinesToAdd(startOfWeek, cat, x-1);
 		if (totalLines + currentEntries.length > 13) return 0;
 		else return totalLines;
-		
 	}
 
 	/********************************************************************
-	 *  Core function to render the calendar
+	 *  Core function to render the calendar (for Tasks/Health)
 	 ********************************************************************/
 	function renderCalendar(selectedDate) {
+		// Only show the calendar if we're on tasks/health
+		if (selectedTab === "today") {
+			calendarTable.style.display = "none";
+			return;
+		} else {
+			calendarTable.style.display = "";
+		}
+
 		const categories = categoriesByTab[selectedTab];
 		const startOfWeek = getStartOfWeek(selectedDate);
 
@@ -236,6 +252,10 @@
 					}
 					cellContentEntry.style.zIndex = 100-index;
 
+					if (d.getDay() === 0 && cellContentEntry.classList.contains('cell-content-overflow')) {
+						cellContentEntry.style.marginLeft = "-20px";
+					}
+
 					// Add newlines based on the current iteration index
 					let displayText = "";
 
@@ -266,22 +286,110 @@
 	}
 
 	/********************************************************************
+	 *  1) "Today" tab rendering
+	 *  2) Add click/tap toggle for each relevant entry
+	 ********************************************************************/
+	function renderTodayTab() {
+		// Show/hide the appropriate content
+		if (selectedTab === "today") {
+			todayTabContent.style.display = "block";
+		} else {
+			todayTabContent.style.display = "none";
+			return; 
+		}
+
+		// Clear out the list
+		todayEntriesList.innerHTML = "";
+
+		const todayKey = formatDateKey(new Date());
+		const relevantTitles = ["⬜", "✅", "❌"];
+
+		// Loop through all categories in your calendarData[todayKey]
+		const categoriesForToday = calendarData[todayKey] || {};
+		for (let categoryName in categoriesForToday) {
+			const entries = categoriesForToday[categoryName];
+
+			// We'll keep track of the index so we can update the entry in the data array
+			entries.forEach((entry, idx) => {
+				if (relevantTitles.includes(entry.title)) {
+					
+					// Decide the display text: 
+					// If category == "TODOs", show "⬜ - description"
+					// else show "⬜ - Category"
+					let displayText = "";
+					if (categoryName === "TODOs") {
+						displayText = `${entry.title} - ${entry.description || "(no description)"}`;
+					} else {
+						displayText = `${entry.title} - ${categoryName}`;
+					}
+
+					// Create an <li> for the "todayEntriesList"
+					const li = document.createElement("li");
+					li.textContent = displayText;
+
+					/** 
+					 * ===============================
+					 *   CLICK HANDLER: CYCLE TITLE
+					 * ===============================
+					 */
+					li.addEventListener("click", () => {
+						const newTitle = getNextTitle(entry.title);
+						entry.title = newTitle;
+
+						// Save changes to localStorage
+						localStorage.setItem("calendarData", JSON.stringify(calendarData));
+
+						// Re-render to see updated titles
+						renderCalendar(currentDate);
+						renderTodayTab();
+					});
+
+					todayEntriesList.appendChild(li);
+				}
+			});
+		}
+	}
+
+	/**
+	 * Helper function to cycle through "⬜", "✅", "❌"
+	 */
+	function getNextTitle(currentTitle) {
+		const cycle = ["⬜", "✅", "❌"];
+		const currentIndex = cycle.indexOf(currentTitle);
+		if (currentIndex === -1) {
+			// If somehow not in the list, default to the first
+			return cycle[0];
+		} else {
+			return cycle[(currentIndex + 1) % cycle.length];
+		}
+	}
+
+	/********************************************************************
 	 *  Tab switching
 	 ********************************************************************/
 	function activateTab(tabName) {
 		selectedTab = tabName;
+
 		// Update tab button styling (bold for the active one)
+		todayTabBtn.classList.remove("active");
 		healthTabBtn.classList.remove("active");
 		tasksTabBtn.classList.remove("active");
-		if (tabName === "health") {
+
+		if (tabName === "today") {
+			todayTabBtn.classList.add("active");
+		} else if (tabName === "health") {
 			healthTabBtn.classList.add("active");
 		} else {
 			tasksTabBtn.classList.add("active");
 		}
-		// Re-render calendar
-		renderCalendar(currentDate);
+
+		renderCalendar(currentDate);   // Re-render table if needed
+		renderTodayTab();             // Also render today's list
 	}
 
+	todayTabBtn.addEventListener("click", () => {
+		activateTab("today");
+	});
 	healthTabBtn.addEventListener("click", () => {
 		activateTab("health");
 	});
@@ -303,9 +411,10 @@
 	});
 
 	/********************************************************************
-	 *  Initial render (Health tab by default)
+	 *  Initial render
 	 ********************************************************************/
 	renderCalendar(currentDate);
+	renderTodayTab();
 
 	</script>
 </body>

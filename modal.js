@@ -18,7 +18,7 @@ const categoryEmojisMap = {
 };
 
 // Fallback if the category doesn't appear in the map
-const defaultQuickEmojis = ["☐", "✅", "❌", "—"];
+const defaultQuickEmojis = ["⬜", "✅", "❌", "—"];
 
 function tintEmoji(emoji, div) {
 	if (emoji === "😀") div.style.filter = "hue-rotate(60deg)";
