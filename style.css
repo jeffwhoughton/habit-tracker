@@ -73,13 +73,10 @@ th, td {
 	width: 11%;
 	overflow:hidden;
 }
-.cell-wrapper-short {
+.cell-wrapper {
 	height: 33px;
 	justify-content: center;
 	align-items: center;
-}
-.cell-wrapper-tall{
-	height: 180px;
 }
 .cell-content-wrapped{
 	font-size: 0.7rem;

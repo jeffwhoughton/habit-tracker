@@ -27,6 +27,24 @@ function isWideCell(cat){
 	);
 }
 
+const categoryHeights = {
+    "Weekly Goal": 33,
+    "Work": 33,
+    "Workout": 33,
+    "Reading": 33,
+    "Writing": 33,
+    "Coding": 33,
+    "Guitar": 33,
+    "TODOs": 180,
+    "Weight / BMI": 33,
+    "Spending": 33,
+    "Early Rise": 33,
+    "Screen Time": 33,
+    "Cals / Protein": 33,
+    "Alcohol": 50,
+    "Mood": 66
+};
+
 function isTallCell(cat){
 	return (
 		cat === "TODOs" ||
@@ -124,13 +142,11 @@ function renderCalendar(selectedDate) {
 			const catEntries = calendarData[dateKey]?.[cat] || [];
 
 			const cellWrapper = document.createElement("div");
-			if (isTallCell(cat)) {
-				cellWrapper.classList.add("cell-wrapper-tall");
-			} else {
-				cellWrapper.classList.add("cell-wrapper-short");
-				if (catEntries.length == 1){
-					cellWrapper.style.display = "flex";
-				}
+			cellWrapper.classList.add("cell-wrapper");
+			const height = categoryHeights[cat] || 33; // Default to 33px if not specified
+    		cellWrapper.style.height = `${height}px`;
+    		if (catEntries.length == 1 && !isTallCell(cat)){
+				cellWrapper.style.display = "flex";
 			}
 
 			// Possibly add new lines for "TODOs"

@@ -48,6 +48,7 @@ function renderTodayTab() {
 
 	// Loop through all categories in your calendarData[currentDateKey]
 	for (let categoryName of categoryNames) {
+		if (categoryName == "Early Rise") continue;
 		const entries = categoriesForToday[categoryName];
 
 		entries.forEach((entry, idx) => {
