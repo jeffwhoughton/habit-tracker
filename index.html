@@ -54,11 +54,6 @@
 			<!-- Container for previous entries -->
 			<div id="previousEntries"></div>
 			<br>
-			<!-- New entry field(s) goes here -->
-			<div id="newEntryWrap"></div>
-			<textarea id="newEntryTitle" rows="2"></textarea>
-
-			<button id="saveEntryBtn">Submit Text Entry</button><br><br>
 		</div>
 	</div>
 
@@ -255,7 +250,7 @@
 					} else {
 						cellContentEntry.classList.add("cell-content-wrapped");
 					}
-					cellContentEntry.style.zIndex = 100-index;
+					cellContentEntry.style.zIndex = ((i+1)*100)-index;
 
 					if (d.getDay() === 0 && cellContentEntry.classList.contains('cell-content-overflow')) {
 						cellContentEntry.style.marginLeft = "-20px";
@@ -268,10 +263,12 @@
 						displayText = "<br>".repeat(index) +
 							entry.title + " " +
 							entry.description;
-					} else {
+					} else if (entry) {
 						displayText = entry.title;						
 					}
-					tintEmoji(entry.title, cellContentEntry);
+					if (entry) {
+						tintEmoji(entry.title, cellContentEntry);
+					}
 
 					cellContentEntry.innerHTML = displayText;
 					cellWrapper.appendChild(cellContentEntry);
@@ -414,9 +411,13 @@
 		renderTodayTab();             // Also render today's list
 	}
 
+	// 1) When the Today tab button is clicked, 
+	//    reset currentDate to the actual current day before activating.
 	todayTabBtn.addEventListener("click", () => {
+		currentDate = new Date();   // <-- Added line
 		activateTab("today");
 	});
+
 	healthTabBtn.addEventListener("click", () => {
 		activateTab("health");
 	});

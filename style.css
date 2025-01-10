@@ -134,6 +134,10 @@ th, td {
 	cursor: pointer;
 }
 
+.drag-handle{
+	display:inline-block;
+	cursor:pointer;
+}
 .entry-row {
 	margin-bottom: 15px;
 	vertical-align:middle;
@@ -165,38 +169,7 @@ th, td {
 	background-color:#f0eada;
 	cursor: pointer;
 }
-#saveEntryBtn{
-	right:0;
-	height:40px;
-	padding: 0px 10px;
-	border: 1px solid black;
-	background-color: #eee;
-	border-radius:5px;
-	cursor: pointer;
-}
 
-.newEntryButton {
-	height: 30px;
-	border: 1px solid black;
-	display:inline-block;
-	line-height:30px;
-	padding: 5px 10px;
-	margin: 0px;
-	margin-right: 5px;
-	text-align:center;
-	vertical-align:center;
-	background-color:#eee;
-	border-radius:5px;
-	cursor: pointer;
-}
-#newEntryTitle{
-	text-align:left;
-	border: 1px solid black;
-	padding: 5px;
-	margin-top: 5px;
-	width:133px;
-	margin-bottom:-13px;
-}
 #exportDataBtn {
 	margin-right: 20px;
 	margin-top: -25px;

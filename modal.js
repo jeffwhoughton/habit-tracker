@@ -1,11 +1,10 @@
-
-// Modal references
+/**************************************************************
+ * 1. References
+ **************************************************************/
 const modalBackdrop = document.getElementById("modalBackdrop");
 const entryModal = document.getElementById("entryModal");
 const modalTitle = document.getElementById("modalTitle");
 const previousEntriesDiv = document.getElementById("previousEntries");
-const newEntryTitleField = document.getElementById("newEntryTitle");
-const saveEntryBtn = document.getElementById("saveEntryBtn");
 const cancelBtn = document.getElementById("cancelBtn");
 
 const categoryEmojisMap = {
@@ -20,6 +19,7 @@ const categoryEmojisMap = {
 // Fallback if the category doesn't appear in the map
 const defaultQuickEmojis = ["⬜", "✅", "❌", "—"];
 
+// Tint certain emojis for demonstration
 function tintEmoji(emoji, div) {
 	if (emoji === "😀") div.style.filter = "hue-rotate(60deg)";
 	if (emoji === "🙂") div.style.filter = "hue-rotate(30deg)";
@@ -27,141 +27,36 @@ function tintEmoji(emoji, div) {
 	if (emoji === "😢") div.style.filter = "hue-rotate(-60deg)";
 }
 
-/********************************************************************
- *  4. Modal handling (view & add/edit entries)
- ********************************************************************/
+/**************************************************************
+ * 2. State variables
+ **************************************************************/
 let currentEditDateKey = null;
 let currentEditCategory = null;
 
+/**************************************************************
+ * 3. Core modal functions
+ **************************************************************/
 function openModal(dateKey, category) {
 	currentEditDateKey = dateKey;
 	currentEditCategory = category;
 
 	modalTitle.innerHTML = `${category}<br>${formatDateKeyToDateString(dateKey)} Entries:`;
 
-	// Display all previous entries in a row with two textareas + a delete button
 	previousEntriesDiv.innerHTML = "";
 	const entries = calendarData[dateKey]?.[category] || [];
-	if (entries.length === 0) {
-		previousEntriesDiv.innerHTML = "No entries yet, select an option below:";
-	}
-
+	
+	// Build each existing entry row
 	entries.forEach((entry, idx) => {
-		// Container for this entry
-		const entryRow = document.createElement("div");
-		entryRow.classList.add("entry-row");
-
-		// Decide which emojis apply to this category
-		const relevantEmojis = categoryEmojisMap[category] || defaultQuickEmojis;
-
-		let titleElement;
-		if (relevantEmojis.includes(entry.title)) {
-			// If the title is one of the relevant emojis, display a <select> of all relevant emojis
-			titleElement = document.createElement("select");
-			titleElement.classList.add("entry-row-drop");
-
-			relevantEmojis.forEach((emoji) => {
-				const option = document.createElement("option");
-				option.value = emoji;
-				option.textContent = emoji;
-				if (emoji === entry.title) {
-					option.selected = true;
-				}
-				titleElement.appendChild(option);
-			});
-
-			titleElement.addEventListener("change", () => {
-				entry.title = titleElement.value;
-				// Save immediately
-				saveEntryBtn.click();
-			});
-		} else {
-			// Otherwise, fall back to a regular textarea for the plain text
-			titleElement = document.createElement("textarea");
-			titleElement.classList.add("entry-row-title");
-			titleElement.rows = 2;
-			titleElement.value = entry.title || "";
-			tintEmoji(entry.title, titleElement);
-			titleElement.addEventListener("change", () => {
-				entry.title = titleElement.value.trim();
-				// Save immediately
-				saveEntryBtn.click();
-			});
-		}
-
-		// Create the description textarea
-		const descArea = document.createElement("textarea");
-		descArea.classList.add("entry-row-desc");
-		descArea.rows = 2;
-		descArea.value = entry.description || "";
-		descArea.placeholder = "Description (optional)";
-		descArea.addEventListener("change", () => {
-			entry.description = descArea.value.trim();
-			// Save immediately
-			saveEntryBtn.click();
-		});
-
-		// Delete button
-		const deleteBtn = document.createElement("button");
-		deleteBtn.classList.add("entry-delete-button");
-		deleteBtn.textContent = "🗑️";
-
-		// ---------------------------------------------------------
-		//  MODIFICATION #2: Confirm user really wants to delete
-		// ---------------------------------------------------------
-		deleteBtn.addEventListener("click", () => {
-			// Request confirmation before deleting
-			if (!confirm("Are you sure you want to delete this entry?")) {
-				return;
-			}
-			// Remove this entry from the array
-			entries.splice(idx, 1);
-			// Re-open modal so user sees updated list
-			openModal(dateKey, category);
-			// Save
-			saveEntryBtn.click();
-		});
-
-		// Append elements to the entryRow
-		entryRow.appendChild(titleElement);
-
-		// For categories that do have a description field
-		if (
-			category !== "Weekly Goal" &&
-			category !== "Weight / BMI" &&
-			category !== "Spending"
-		) {
-			entryRow.appendChild(descArea);
-		} else {
-			// If you still want a description for these categories, remove the ‘if’ check
-			titleElement.style.width = "200px";
-		}
-
-		entryRow.appendChild(deleteBtn);
-		previousEntriesDiv.appendChild(entryRow);
+		createEntryRow(entry, idx, entries);
 	});
 
-	// --- DYNAMIC QUICK BUTTONS ---
-	// 1) Clear out newEntryWrap
-	const newEntryWrap = document.getElementById("newEntryWrap");
-	newEntryWrap.innerHTML = "";
-
-	// 3) Decide which emojis to display
-	let emojisToDisplay = categoryEmojisMap[category] || defaultQuickEmojis;
-
-	// 4) For each emoji, create a “button” div and attach the quickEntry event
-	emojisToDisplay.forEach((emoji) => {
-		const btn = document.createElement("div");
-		btn.classList.add("newEntryButton");
-		btn.textContent = emoji;
-		tintEmoji(emoji, btn);
-		btn.onclick = () => quickEntry(emoji);
-		newEntryWrap.appendChild(btn);
-	});
+	// Create one extra blank row at the end
+	createEntryRow({ title: "", description: "" }, entries.length, entries, true);
 
 	// Show the modal
 	modalBackdrop.style.display = "flex";
 
+	// Push a new history state
 	history.pushState({ modalOpen: true }, "Modal Open");
 }
 
@@ -169,66 +64,208 @@ function closeModal() {
 	modalBackdrop.style.display = "none";
 	currentEditDateKey = null;
 	currentEditCategory = null;
-	newEntryTitleField.value = "";
 
 	// Go back in the history stack if modal was opened
-    if (history.state?.modalOpen) {
-        history.back();
-    }
+	if (history.state?.modalOpen) {
+		history.back();
+	}
 }
 
-function quickEntry(emoji) {
-	document.getElementById("newEntryTitle").value = emoji;
-	saveEntryBtn.click();
-}
-
-// Listen for the popstate event to handle back button
-window.addEventListener("popstate", (event) => {
-    if (event.state?.modalOpen) {
-
-        closeModal();
-    }
-});
-
-// -------------------------------------------------------
-//   MODIFICATION #1: Filter out empty entries on save
-// -------------------------------------------------------
-saveEntryBtn.addEventListener("click", () => {
-	if (!currentEditDateKey || !currentEditCategory) return;
-
-	// Grab references to the array in calendarData
-	if (!calendarData[currentEditDateKey]) {
-		calendarData[currentEditDateKey] = {};
-	}
-	if (!calendarData[currentEditDateKey][currentEditCategory]) {
-		calendarData[currentEditDateKey][currentEditCategory] = [];
-	}
-	let entries = calendarData[currentEditDateKey][currentEditCategory];
-
-	// 1) Add new entry if the user typed a title
-	const newTitle = newEntryTitleField.value.trim();
-	if (newTitle) {
-		entries.push({ title: newTitle });
+/**************************************************************
+ * 4. Create (and return) a single entry row
+ *    'isBlankRow' determines if this is the "extra" row
+ **************************************************************/
+function createEntryRow(entry, idx, entries, isBlankRow = false) {
+	// Container for this entry
+	const entryRow = document.createElement("div");
+	entryRow.classList.add("entry-row");
+	
+	// Add a small "drag-handle" so you can reorder
+	const dragHandle = document.createElement("div");
+	dragHandle.classList.add("drag-handle");
+	dragHandle.innerHTML = "⋮⋮"; // or any icon
+	if (isBlankRow) {
+		dragHandle.style.visibility = "hidden";
 	}
 
-	// 2) Now remove any entries which are blank after trimming
-	entries = entries.filter((entry) => {
-		const titleIsEmpty = !entry.title || entry.title.trim() === "";
-		const descIsEmpty = !entry.description || entry.description.trim() === "";
-		// Keep the entry if it has something in title or description
-		return !(titleIsEmpty && descIsEmpty);
+	// Mark row as draggable
+	entryRow.draggable = true;
+	entryRow.addEventListener("dragstart", (e) => {
+		// Store the start index
+		e.dataTransfer.setData("text/plain", idx.toString());
+		// Add some style
+		entryRow.classList.add("dragging");
 	});
-	calendarData[currentEditDateKey][currentEditCategory] = entries;
+	entryRow.addEventListener("dragend", () => {
+		entryRow.classList.remove("dragging");
+	});
+	entryRow.addEventListener("dragover", (e) => {
+		e.preventDefault();
+		// This will let us drop here
+	});
+	entryRow.addEventListener("drop", (e) => {
+		e.preventDefault();
+		const fromIndex = parseInt(e.dataTransfer.getData("text/plain"), 10);
+		const toIndex = idx;
 
-	// 3) Save to localStorage
+		// Reorder the array
+		if (fromIndex !== toIndex && !isBlankRow) {
+			const movedItem = entries.splice(fromIndex, 1)[0];
+			entries.splice(toIndex, 0, movedItem);
+			
+			// Save changes to localStorage
+			saveData(entries);
+
+			// Re-render the modal without closing it
+			openModal(currentEditDateKey, currentEditCategory);
+		}
+	});
+
+	// Decide which emojis apply to this category
+	const relevantEmojis = categoryEmojisMap[currentEditCategory] || defaultQuickEmojis;
+
+	// Title element
+	let titleElement;
+	if (relevantEmojis.includes(entry.title)) {
+		// If the title is one of the relevant emojis, display a <select>
+		titleElement = document.createElement("select");
+		titleElement.classList.add("entry-row-drop");
+
+		relevantEmojis.forEach((emoji) => {
+			const option = document.createElement("option");
+			option.value = emoji;
+			option.textContent = emoji;
+			if (emoji === entry.title) {
+				option.selected = true;
+			}
+			titleElement.appendChild(option);
+		});
+
+		titleElement.addEventListener("change", () => {
+			entry.title = titleElement.value.trim();
+			maybeAddOrRemoveBlankRow(entry, entries, idx, isBlankRow);
+		});
+	} else {
+		// Otherwise, a regular textarea
+		titleElement = document.createElement("select");
+		titleElement.classList.add("entry-row-drop");
+
+		// Add an empty option
+		const emptyOption = document.createElement("option");
+		emptyOption.value = "";
+		emptyOption.textContent = "";
+		titleElement.appendChild(emptyOption);
+
+		// Insert relevant emojis as additional options
+		relevantEmojis.forEach((emoji) => {
+			const option = document.createElement("option");
+			option.value = emoji;
+			option.textContent = emoji;
+			titleElement.appendChild(option);
+		});
+
+		// If there's an existing text not in our list, we ignore it
+		// but for now let's do a best-effort (you could adapt to your needs)
+		titleElement.value = relevantEmojis.includes(entry.title) ? entry.title : "";
+
+		titleElement.addEventListener("change", () => {
+			entry.title = titleElement.value.trim();
+			tintEmoji(entry.title, titleElement);
+			maybeAddOrRemoveBlankRow(entry, entries, idx, isBlankRow);
+		});
+	}
+	tintEmoji(entry.title, titleElement);
+
+	// Create the description textarea
+	const descArea = document.createElement("textarea");
+	descArea.classList.add("entry-row-desc");
+	descArea.rows = 2;
+	descArea.value = entry.description || "";
+	descArea.placeholder = "Description (optional)";
+	descArea.addEventListener("change", () => {
+		entry.description = descArea.value.trim();
+		maybeAddOrRemoveBlankRow(entry, entries, idx, isBlankRow);
+	});
+
+	// Delete button
+	const deleteBtn = document.createElement("button");
+	deleteBtn.classList.add("entry-delete-button");
+	deleteBtn.textContent = "🗑️";
+
+	// Confirm user really wants to delete
+	deleteBtn.addEventListener("click", () => {
+		if (!confirm("Are you sure you want to delete this entry?")) {
+			return;
+		}
+		// Remove this entry from the array
+		entries.splice(idx, 1);
+		// Save
+		saveData(entries);
+		// Re-render the modal in-place
+		openModal(currentEditDateKey, currentEditCategory);
+	});
+
+	// Append elements
+	entryRow.appendChild(dragHandle);
+	entryRow.appendChild(titleElement);
+	entryRow.appendChild(descArea);
+	entryRow.appendChild(deleteBtn);
+
+	previousEntriesDiv.appendChild(entryRow);
+}
+
+/**************************************************************
+ * 5. Decide whether to save + add a fresh blank row
+ **************************************************************/
+function maybeAddOrRemoveBlankRow(entry, entries, idx, isBlankRow) {
+	// If user typed something in either the title or the description
+	const hasContent = (entry.title && entry.title.trim() !== "") ||
+					   (entry.description && entry.description.trim() !== "");
+
+	if (isBlankRow && hasContent) {
+		// We convert this blank row into a real entry
+		// Then we create a new blank row at the bottom
+		entries[idx] = { title: entry.title, description: entry.description };
+		
+		// Save
+		saveData(entries);
+
+		// Re-render
+		openModal(currentEditDateKey, currentEditCategory);
+	} else if (!isBlankRow) {
+		// If this wasn't a blank row, then we just save if there's content
+		saveData(entries);
+	}
+}
+
+/**************************************************************
+ * 6. Save data to localStorage, filtering out empty entries
+ **************************************************************/
+function saveData(entries) {
+	// Filter out any completely empty entries
+	const filtered = entries.filter((myE) => {
+		const t = myE.title ? myE.title.trim() : "";
+		const d = myE.description ? myE.description.trim() : "";
+		return (t !== "" || d !== "");
+	});
+
+	// Reassign filtered array
+	calendarData[currentEditDateKey][currentEditCategory] = filtered;
+
+	// Save to localStorage
 	localStorage.setItem("calendarData", JSON.stringify(calendarData));
 
-	// 4) Close modal and re-render
-	const tempDate = currentEditDateKey;
-	const tempCat = currentEditCategory;
-	closeModal();
-	openModal(tempDate, tempCat);
+	// Re-render the main calendar
 	renderCalendar(currentDate);
+}
+
+/**************************************************************
+ * 7. Popstate + Cancel handling
+ **************************************************************/
+window.addEventListener("popstate", (event) => {
+	if (event.state?.modalOpen) {
+		closeModal();
+	}
 });
 
 cancelBtn.addEventListener("click", closeModal);
