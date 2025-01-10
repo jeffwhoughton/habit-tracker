@@ -13,13 +13,12 @@ const categoryEmojisMap = {
 	"Weight / BMI": [],
 	"Spending": [],
 	"Cals / Protein": [],
-	"TODOs": ["☐","☑"],
 	"Mood": ["😀", "🙂", "😑", "😞", "😢"],
-	"Alcohol": ["🍺","—"]
+	"Alcohol": ["🍺","🌿","—"]
 };
 
 // Fallback if the category doesn't appear in the map
-const defaultQuickEmojis = ["✅", "❌", "🟡","—"];
+const defaultQuickEmojis = ["☐", "✅", "❌", "—"];
 
 function tintEmoji(emoji, div) {
 	if (emoji === "😀") div.style.filter = "hue-rotate(60deg)";
@@ -186,7 +185,7 @@ function quickEntry(emoji) {
 // Listen for the popstate event to handle back button
 window.addEventListener("popstate", (event) => {
     if (event.state?.modalOpen) {
-    	
+
         closeModal();
     }
 });

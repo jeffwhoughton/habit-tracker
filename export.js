@@ -68,3 +68,29 @@ exportDataBtn.addEventListener("mouseleave", clearPressTimer);
 exportDataBtn.addEventListener("touchstart", startPressTimer); // Mobile support
 exportDataBtn.addEventListener("touchend", clearPressTimer);   // Mobile support
 exportDataBtn.addEventListener("touchcancel", clearPressTimer); // Mobile support
+
+function renamePlansToTODOsOnStartup() {
+    // 1) Read existing data
+    const storedData = localStorage.getItem("calendarData");
+    if (!storedData) return;  // If nothing is stored yet, exit
+    
+    let data = JSON.parse(storedData);
+    
+    // 2) Iterate over each dateKey in the data
+    for (let dateKey in data) {
+        // Check if "Plans" category exists
+        if (data[dateKey].hasOwnProperty("Plans")) {
+            // If "TODOs" doesn't exist, create it
+            if (!data[dateKey]["TODOs"]) {
+                data[dateKey]["TODOs"] = [];
+            }
+            // Append the Plans array to the existing TODOs array
+            data[dateKey]["TODOs"] = data[dateKey]["TODOs"].concat(data[dateKey]["Plans"]);
+            // Remove the "Plans" category
+            delete data[dateKey]["Plans"];
+        }
+    }
+    
+    // 3) Save back to localStorage
+    localStorage.setItem("calendarData", JSON.stringify(data));
+}
