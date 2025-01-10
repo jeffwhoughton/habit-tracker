@@ -297,15 +297,7 @@ function handleCellLongPress(dateKey) {
 function showToast(message) {
   const toast = document.createElement("div");
   toast.textContent = message;
-  toast.style.position = "fixed";
-  toast.style.bottom = "20px";
-  toast.style.left = "50%";
-  toast.style.transform = "translateX(-50%)";
-  toast.style.background = "rgba(0,0,0,0.8)";
-  toast.style.color = "#fff";
-  toast.style.padding = "8px 12px";
-  toast.style.borderRadius = "4px";
-  toast.style.zIndex = "9999";
+  toast.classList.add("toast");
   document.body.appendChild(toast);
 
   setTimeout(() => {
