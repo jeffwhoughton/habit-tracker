@@ -1,11 +1,9 @@
-/**************************************************************
- * 1. References
- **************************************************************/
-const modalBackdrop		= document.getElementById("modalBackdrop");
-const entryModal			= document.getElementById("entryModal");
-const modalTitle			= document.getElementById("modalTitle");
-const previousEntriesDiv	= document.getElementById("previousEntries");
-const cancelBtn			= document.getElementById("cancelBtn");
+
+const modalBackdrop			= document.getElementById("modalBackdrop");
+const entryModal				= document.getElementById("entryModal");
+const modalTitle				= document.getElementById("modalTitle");
+const previousEntriesDiv		= document.getElementById("previousEntries");
+const cancelBtn				= document.getElementById("cancelBtn");
 
 const categoryEmojisMap = {
 	"Weekly Goal": [],
@@ -26,6 +24,13 @@ function tintEmoji(emoji, div) {
 	if (emoji === "🙂") div.style.filter = "hue-rotate(30deg)";
 	if (emoji === "😞") div.style.filter = "hue-rotate(-30deg)";
 	if (emoji === "😢") div.style.filter = "hue-rotate(-60deg)";
+}
+
+/**************************************************************
+ * Ensure there's an initial history state
+ **************************************************************/
+if (!history.state) {
+	history.replaceState({ modalOpen: false }, "Initial State");
 }
 
 /**************************************************************
@@ -57,7 +62,7 @@ function openModal(dateKey, category) {
 	// Show the modal
 	modalBackdrop.style.display = "flex";
 
-	// Push a new history state
+	// Push a new history state (so we can go 'back' to close)
 	history.pushState({ modalOpen: true }, "Modal Open");
 }
 
@@ -66,7 +71,7 @@ function closeModal() {
 	currentEditDateKey = null;
 	currentEditCategory = null;
 
-	// Go back in the history stack if modal was opened
+	// If we have a modal-open state in history, go back once
 	if (history.state?.modalOpen) {
 		history.back();
 	}
@@ -291,9 +296,11 @@ function saveData(entries) {
  * 7. Popstate + Cancel handling
  **************************************************************/
 window.addEventListener("popstate", (event) => {
-	if (event.state?.modalOpen) {
+	// If we pop to a state that doesn't have modalOpen == true, close the modal
+	if (!event.state || !event.state.modalOpen) {
 		closeModal();
 	}
 });
 
 cancelBtn.addEventListener("click", closeModal);
+
