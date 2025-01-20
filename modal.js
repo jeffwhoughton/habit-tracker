@@ -282,6 +282,10 @@ function saveData(entries) {
 		return (t !== "" || d !== "");
 	});
 
+	if (!calendarData[currentEditDateKey]) {
+		calendarData[currentEditDateKey] = {};
+	}
+
 	// Reassign filtered array
 	calendarData[currentEditDateKey][currentEditCategory] = filtered;
 
