@@ -26,11 +26,10 @@ function getMonthName(date) {
 }
 
 function formatFriendlyDate(dateObj) {
-	const dayName = dateObj.toLocaleString("default", { weekday: "long" });
-	const monthName = dateObj.toLocaleString("default", { month: "long" });
+	const dayName = dateObj.toLocaleString("default", { weekday: "short" });
+	const monthName = dateObj.toLocaleString("default", { month: "short" });
 	const dayNum   = dateObj.getDate();
-	const year     = dateObj.getFullYear();
-	return `${dayName}, ${monthName} ${dayNum}, ${year}`;
+	return `${dayName}, ${monthName} ${dayNum}`;
 }
 
 function getWeekOfMonth(date) {

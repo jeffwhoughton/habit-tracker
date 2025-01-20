@@ -29,7 +29,7 @@ function doImport() {
   // Create and trigger a file input for importing JSON
   const fileInput = document.createElement("input");
   fileInput.type = "file";
-  fileInput.accept = ".json";
+  fileInput.accept = ".txt";
 
   fileInput.addEventListener("change", (event) => {
     const file = event.target.files[0];

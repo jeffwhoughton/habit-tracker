@@ -1,4 +1,3 @@
-
 // "Today" tab content
 const todayTabContent = document.getElementById("todayTabContent");
 const todayEntriesList = document.getElementById("todayEntriesList");
@@ -6,6 +5,7 @@ const todayEntriesList = document.getElementById("todayEntriesList");
 /********************************************************************
  *  1) "Today" tab rendering
  *  2) Add click/tap toggle for each relevant entry
+ *  3) Show old TODOs (⬜) below the main list
  ********************************************************************/
 function renderTodayTab() {
 	// Show/hide the appropriate content
@@ -29,7 +29,7 @@ function renderTodayTab() {
 
 	} else {
 		todayTabContent.style.display = "none";
-		return; 
+		return;
 	}
 
 	// Clear out the list
@@ -38,28 +38,28 @@ function renderTodayTab() {
 	const todayKey = formatDateKey(currentDate);
 	const relevantTitles = ["⬜", "✅", "❌"];
 
-	// Shift TODOs to the end:
-    const categoriesForToday = calendarData[todayKey] || {};
-    let categoryNames = Object.keys(categoriesForToday);
-    categoryNames = categoryNames.filter(name => name !== "TODOs");
-    if (categoriesForToday["TODOs"]) {
-        categoryNames.push("TODOs");
-    }
+	// Shift TODOs to the end
+	const categoriesForToday = calendarData[todayKey] || {};
+	let categoryNames = Object.keys(categoriesForToday);
+	categoryNames = categoryNames.filter(name => name !== "TODOs");
+	if (categoriesForToday["TODOs"]) {
+		categoryNames.push("TODOs");
+	}
 
-	// Loop through all categories in your calendarData[currentDateKey]
+	// Loop through all categories for current day
 	for (let categoryName of categoryNames) {
-		if (categoryName == "Early Rise") continue;
-		const entries = categoriesForToday[categoryName];
+		// Skip "Early Rise" if it's not relevant
+		if (categoryName === "Early Rise") continue;
 
+		const entries = categoriesForToday[categoryName] || [];
 		entries.forEach((entry, idx) => {
 			if (relevantTitles.includes(entry.title)) {
-				
 				// Decide the display text
 				let displayText = "";
 				if (categoryName === "TODOs") {
-					displayText = `${entry.title} &nbsp;${entry.description || "(no description)"}`;
+					displayText = `${entry.title}\u00A0${entry.description || "(no description)"}`;
 				} else {
-					displayText = `${entry.title} &nbsp;${categoryName}`;
+					displayText = `${entry.title}\u00A0${categoryName}`;
 				}
 
 				// Create an <li> for the "todayEntriesList"
@@ -86,6 +86,60 @@ function renderTodayTab() {
 				todayEntriesList.appendChild(li);
 			}
 		});
+	}
+
+	// -----------------------------------------------------
+	//  At the end, display any old TODOs with title "⬜"
+	// -----------------------------------------------------
+	const oldTodos = [];
+	for (let dateKey in calendarData) {
+		// Check only past dates (using string comparison for YYYY-MM-DD format)
+		if (dateKey < todayKey) {
+			const categories = calendarData[dateKey];
+			if (categories && categories["TODOs"]) {
+				for (let oldTodo of categories["TODOs"]) {
+					if (oldTodo.title === "⬜") {
+						oldTodos.push({
+							dateKey,
+							entry: oldTodo
+						});
+					}
+				}
+			}
+		}
+	}
+
+	if (oldTodos.length > 0) {
+		// Add a header for old TODOs
+		const oldTodosHeader = document.createElement("h2");
+		oldTodosHeader.textContent = "Old TODOs:";
+		todayTabContent.appendChild(oldTodosHeader);
+
+		// Create a separate list for them
+		const oldTodosList = document.createElement("ul");
+
+		oldTodos.forEach(({ dateKey, entry }) => {
+			const li = document.createElement("li");
+			// Show the date plus the description or a default
+			const dateObj = new Date(dateKey);
+			const friendlyDate = formatFriendlyDate(dateObj);
+			li.innerHTML = `⬜\u00A0${entry.description || "(no description)"} <span style="font-size:0.6rem">(${friendlyDate})</span>`;
+
+			// Optional: If you want them clickable to cycle titles,
+			li.addEventListener("click", () => {
+				const newTitle = getNextTitle(entry.title);
+				entry.title = newTitle;
+				// Save changes
+				localStorage.setItem("calendarData", JSON.stringify(calendarData));
+				// Re-render
+				renderCalendar(currentDate);
+				renderTodayTab();
+			});
+
+			oldTodosList.appendChild(li);
+		});
+
+		todayTabContent.appendChild(oldTodosList);
 	}
 }
 
