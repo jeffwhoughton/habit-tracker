@@ -71,7 +71,7 @@ th, td {
 	text-align: center;
 	font-size: 0.8rem;
 	width: 11%;
-	overflow:hidden;
+	overflow:visible;
 }
 .cell-wrapper {
 	height: 33px;
@@ -91,9 +91,31 @@ th, td {
 	white-space: nowrap;
 	position:absolute;
 	max-height: 93px;
-	overflow:hidden;
 	background-color: white;
 }
+.sunday-carousel {
+    position: relative;        /* So we can position children absolutely */
+    height: 13px;              /* Match the cell height or set a custom */
+    overflow: hidden;
+    margin-left: -20px;
+}
+.sunday-carousel .scrolling-text {
+    position: absolute;   /* Absolutely position the text so we can move it */
+    animation: scroller 6s linear infinite; /* Use your scroller animation */
+}
+
+@keyframes scroller {
+	0% {
+		transform: translateX(0px);
+	}
+	20% {
+		transform: translateX(0px);
+	}
+	100% {
+		transform: translateX(-80px);
+	}
+}
+
 
 .toast{
 	position: fixed;
@@ -106,6 +128,7 @@ th, td {
 	border-radius: 4px;
 	z-index: 9999;
 }
+
 
 /* ===== Modal styling ===== */
 .modal-backdrop {

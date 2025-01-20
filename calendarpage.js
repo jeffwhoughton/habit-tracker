@@ -139,6 +139,10 @@ function renderCalendar(selectedDate) {
 			tdTableCell.dataset.dateKey = dateKey;
 			tdTableCell.dataset.category = cat;
 
+			if (d.toDateString() === new Date().toDateString() && !isWideCell(cat)) {
+				tdTableCell.style.border = "1px solid #ddd";
+			}
+
 			const catEntries = calendarData[dateKey]?.[cat] || [];
 
 			const cellWrapper = document.createElement("div");
@@ -168,10 +172,6 @@ function renderCalendar(selectedDate) {
 				}
 				cellContentEntry.style.zIndex = ((i+1)*100)-index;
 
-				if (d.getDay() === 0 && cellContentEntry.classList.contains('cell-content-overflow')) {
-					cellContentEntry.style.marginLeft = "-20px";
-				}
-
 				let displayText = "";
 				if (isTallCell(cat) && shouldDisplayDescription(cat) && entry.description) {
 					displayText = "<br>".repeat(index) +
@@ -184,7 +184,17 @@ function renderCalendar(selectedDate) {
 					tintEmoji(entry.title, cellContentEntry);
 				}
 
-				cellContentEntry.innerHTML = displayText;
+				if (d.getDay() === 0 && cellContentEntry.classList.contains('cell-content-overflow')) {
+					cellContentEntry.classList.add("sunday-carousel")
+					displayText = displayText.replace(/<br>/g, '');;
+					if (displayText.length > 8) {
+						cellContentEntry.innerHTML = `<span class="scrolling-text">${displayText}</span>`;
+					} else {
+						cellContentEntry.innerHTML = displayText;	
+					}
+				} else {
+					cellContentEntry.innerHTML = displayText;
+				}
 				cellWrapper.appendChild(cellContentEntry);
 			});
 
